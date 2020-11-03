@@ -58,6 +58,8 @@ app.post('/successful_payment', async (req, res) => {
     const email = customer.email
     const invoice = payload.invoice
 
+    console.log(payload)
+
     let date = new Date()
     date = date.setUTCHours(0, 0, 0, 0)
 
