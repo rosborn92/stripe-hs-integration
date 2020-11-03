@@ -18,28 +18,31 @@ app.post('/cancel_subscription', async (req, res) => {
     const payload = req.body.data.object
     const product = payload.items.data[0].price.produc
     const customerId = payload.customer
-    const prodInfo = handleProd(product)
-    const customer = await stripe.customers.retrieve(customerId);
-    const email = customer.email
 
-    let date = new Date()
-    date = date.setUTCHours(0, 0, 0, 0)
+    if (product) {
+        const prodInfo = handleProd(product)
+        const customer = await stripe.customers.retrieve(customerId);
+        const email = customer.email
 
-    try {
-        const userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
-        const userData = userRes.data
-        const userId = userData.vid
+        let date = new Date()
+        date = date.setUTCHours(0, 0, 0, 0)
 
-        if (prodInfo.prod === "Authorify") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "authorify_dpp_cancel_date", value: date }] }, { "Content-Type": "application/json" })
-        } else if (prodInfo.prod === "RMA") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_cancel_date", value: date }] }, { "Content-Type": "application/json" })
-        } else if (prodInfo.prod === "DFY") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_canceled_date", value: date }] }, { "Content-Type": "application/json" })
+        try {
+            const userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
+            const userData = userRes.data
+            const userId = userData.vid
+
+            if (prodInfo.prod === "Authorify") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "authorify_dpp_cancel_date", value: date }] }, { "Content-Type": "application/json" })
+            } else if (prodInfo.prod === "RMA") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_cancel_date", value: date }] }, { "Content-Type": "application/json" })
+            } else if (prodInfo.prod === "DFY") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_canceled_date", value: date }] }, { "Content-Type": "application/json" })
+            }
+
+        } catch (e) {
+            console.log("ERROR", e);
         }
-
-    } catch (e) {
-        console.log("ERROR", e);
     }
     res.status(200).send()
 })
@@ -58,14 +61,12 @@ app.post('/successful_payment', async (req, res) => {
     const email = customer.email
     const invoice = payload.invoice
 
-    console.log(payload)
-
     let date = new Date()
     date = date.setUTCHours(0, 0, 0, 0)
 
-    let invoiceData;
-
     if (invoice) {
+        let invoiceData;
+
         try {
             invoiceData = await stripe.invoices.retrieve(invoice);
         } catch (e) {
@@ -74,12 +75,8 @@ app.post('/successful_payment', async (req, res) => {
             return;
         }
 
-        let prodInfo;
-
         const product = invoiceData.lines.data[0].plan.product
-        prodInfo = handleProd(product)
-
-        console.log("PROD INFO", prodInfo);
+        const prodInfo = handleProd(product)
 
         let userRes;
         try {
@@ -110,31 +107,56 @@ app.post('/successful_payment', async (req, res) => {
 app.post('/failed_payment', async (req, res) => {
     const payload = req.body.data.object
     const customerId = payload.customer
-    const customer = await stripe.customers.retrieve(customerId);
+    let customer;
+
+    try {
+        customer = await stripe.customers.retrieve(customerId);
+
+    } catch (e) {
+        console.error("ERROR: Could not retrieve customer by Id");
+    }
+
     const email = customer.email
     const invoice = payload.invoice
 
     let date = new Date()
     date = date.setUTCHours(0, 0, 0, 0)
 
-    const invoiceData = await stripe.invoices.retrieve(invoice);
-    const product = invoiceData.lines.data[0].plan.product
-    const prodInfo = handleProd(product)
+    if (invoice) {
+        let invoiceData;
 
-    try {
-        const userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
+        try {
+            invoiceData = await stripe.invoices.retrieve(invoice);
+        } catch (e) {
+            console.log("ERROR: Could not retrieve invoice data.");
+            res.status(200).send()
+            return;
+        }
+
+        const product = invoiceData.lines.data[0].plan.product
+        const prodInfo = handleProd(product)
+
+        let userRes;
+        try {
+            userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
+
+        } catch (e) {
+            console.error("ERROR: Could not find Hubspot User");
+        }
+
         const userData = userRes.data
         const userId = userData.vid
-
-        if (prodInfo.prod === "Authorify") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dppptrial_hold_date", value: date }] }, { "Content-Type": "application/json" })
-        } else if (prodInfo.prod === "RMA") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_hold_date", value: date }] }, { "Content-Type": "application/json" })
-        } else if (prodInfo.prod === "DFY") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_hold_date", value: date }] }, { "Content-Type": "application/json" })
+        try {
+            if (prodInfo.prod === "Authorify") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dppptrial_hold_date", value: date }] }, { "Content-Type": "application/json" })
+            } else if (prodInfo.prod === "RMA") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_hold_date", value: date }] }, { "Content-Type": "application/json" })
+            } else if (prodInfo.prod === "DFY") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_hold_date", value: date }] }, { "Content-Type": "application/json" })
+            }
+        } catch (e) {
+            console.log("ERROR: Could not update User Contact");
         }
-    } catch (e) {
-        console.log("ERROR", e);
     }
 
     res.status(200).send()
