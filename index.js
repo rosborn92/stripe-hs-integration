@@ -10,6 +10,10 @@ const PORT = process.env.PORT || 3000
 
 const stripe = require('stripe')(process.env.STRIPE_PROD_SK);
 
+app.get("/", (req, res) => {
+    res.send(JSON.stringify({ "Hello": "World" }))
+});
+
 app.post('/cancel_subscription', async (req, res) => {
     const payload = req.body.data.object
     const product = payload?.items?.data[0].price.produc
