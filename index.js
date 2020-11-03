@@ -65,35 +65,43 @@ app.post('/successful_payment', async (req, res) => {
 
     let invoiceData;
 
-    try {
-        invoiceData = await stripe.invoices.retrieve(invoice);
-    } catch (e) {
-        console.error("ERROR: Could not retrieve invoice data.");
-    }
-    const product = invoiceData.lines.data[0].plan.product
-    const prodInfo = handleProd(product)
-    console.log("PROD INFO", prodInfo);
-
-    let userRes;
-    try {
-        userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
-    } catch (e) {
-        console.error("ERROR: Could not find Hubspot User");
-    }
-
-    const userData = userRes.data
-    const userId = userData.vid
-
-    try {
-        if (prodInfo.prod === "Authorify") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dppp_trial_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
-        } else if (prodInfo.prod === "RMA") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
-        } else if (prodInfo.prod === "DFY") {
-            await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
+    if (invoice) {
+        try {
+            invoiceData = await stripe.invoices.retrieve(invoice);
+        } catch (e) {
+            console.log("ERROR: Could not retrieve invoice data.");
+            res.status(200).send()
+            return;
         }
-    } catch (e) {
-        console.log("ERROR: Could not update User Contact");
+
+        let prodInfo;
+
+        const product = invoiceData.lines.data[0].plan.product
+        prodInfo = handleProd(product)
+
+        console.log("PROD INFO", prodInfo);
+
+        let userRes;
+        try {
+            userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
+        } catch (e) {
+            console.error("ERROR: Could not find Hubspot User");
+        }
+
+        const userData = userRes.data
+        const userId = userData.vid
+
+        try {
+            if (prodInfo.prod === "Authorify") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dppp_trial_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
+            } else if (prodInfo.prod === "RMA") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
+            } else if (prodInfo.prod === "DFY") {
+                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
+            }
+        } catch (e) {
+            console.log("ERROR: Could not update User Contact");
+        }
     }
 
     res.status(200).send()
