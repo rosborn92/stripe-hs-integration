@@ -16,8 +16,8 @@ app.get("/", (req, res) => {
 
 app.post('/cancel_subscription', async (req, res) => {
     const payload = req.body.data.object
-    const product = payload?.items?.data[0].price.produc
-    const customerId = payload?.customer
+    const product = payload.items.data[0].price.produc
+    const customerId = payload.customer
     const prodInfo = handleProd(product)
     const customer = await stripe.customers.retrieve(customerId);
     const email = customer.email
