@@ -8,7 +8,7 @@ const app = express()
 app.use(bodyParser.json())
 const PORT = process.env.PORT || 3000
 
-const stripe = require('stripe')(process.env.STRIPE_TEST_SK);
+const stripe = require('stripe')(process.env.STRIPE_PROD_SK);
 
 app.post('/cancel_subscription', async (req, res) => {
     const payload = req.body.data.object
