@@ -344,11 +344,10 @@ app.post('/successful_payment', async (req, res) => {
         try {
             const deals = await getContactDeals(userId)
 
-            // TEST THIS OUT !!! SHOULD BE AN ARRAY OF DEAL OBJECTS
             const dealsWithData = await Promise.all(deals.map(async (deal) => {
                 return await getDealData(deal)
             }))
-
+            console.log("DEALS WITH DATA", dealsWithData);
             const match = dealsWithData.find((ele) => {
                 ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.product}`
             })
