@@ -4,7 +4,7 @@ Webhooks triggered from Stripe events are handled by an Express app and result i
 
 ## Description
 
-Four triggers: subscription cancellations, successful payments, failed payments, and credit card expirations result in updated properties for Hubspot contacts identified by a Stripe user's email that is extracted from webhook payloads when events triggered by Stripe actions interact with this web app.
+Six triggers: subscriptions created, subscription cancellations, updated subscriptions, successful payments, failed payments, and credit card expirations result in updated properties for Hubspot contacts identified by a Stripe user's email that is extracted from webhook payloads when events triggered by Stripe actions interact with this web app.
 
 ## Getting Started
 
@@ -24,5 +24,5 @@ Four triggers: subscription cancellations, successful payments, failed payments,
 
 ## Help
 
-in the utils folder, you will find a products.js file where a utility function handles a switch case for products. Stripe uses test data where the products used in this app have different product id's depending on whether the app is running locally or in production. Similarly, Stripe uses a test and live Secret Key that almost be configured depending on the environment. Lastly, the endpoints described above should never have to change for the production app but will need to be updated each time a dev fires up the app on a new NGROK tunnel, as each occasion returns a unique URL.
+in the utils folder, you will find a products.js file where a utility function handles a switch case for products. Stripe products have different product id's depending on whether the developer is using live or test data. This can easily be toggled by commenting out the handleProd function that you don't want to use and un-commenting the one you do want to use. Similarly, Stripe uses a test and live Secret Key that also must be configured depending on the environment. This can be toggled by commenting/un-commenting the line in index.js that invokes Stripe. Lastly, the endpoints described above should never have to change for the production app but will need to be updated each time a dev fires up the app on a new NGROK tunnel, as each occasion returns a unique URL.
 ```
