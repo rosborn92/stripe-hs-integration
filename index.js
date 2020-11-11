@@ -318,6 +318,7 @@ app.post('/create_subscription', async (req, res) => {
 
 app.post('/successful_payment', async (req, res) => {
     console.log("SUCCESSFUL PAYMENT");
+    console.log("PAYLOAD", payload);
     const payload = req.body.data.object
     const customerId = payload.customer
     const invoice = payload.invoice
@@ -328,9 +329,6 @@ app.post('/successful_payment', async (req, res) => {
     const name = customer.name
 
     const invoiceData = await stripe.invoices.retrieve(invoice);
-
-    const product = invoiceData.lines.data[0].price.product
-    const prodInfo = handleProd(product)
 
     const productPriceId = invoiceData.lines.data[0].price.id
     const priceObj = handlePrice(productPriceId)
