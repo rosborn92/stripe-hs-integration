@@ -3,69 +3,124 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 require('dotenv').config()
 const { handleProd, handlePrice } = require('./utils/products')
-const { createUser, getUserVID, getContactDeals, getDealData } = require('./utils/hubspot')
+const { getUserVID, createUser, getContactDeals, getDealData, createDeal, getHubspotProducts, createProduct, getLineItems, createLineItem, createAssociation, updateDeal, associateContactToDeal, cancelDeal } = require('./utils/hubspot')
 const app = express()
 app.use(bodyParser.json())
 
 const PORT = process.env.PORT || 3000
 
 const stripe = require('stripe')(process.env.STRIPE_PROD_SK);
+// const stripe = require('stripe')(process.env.STRIPE_TEST_SK);
 
 app.get("/", (req, res) => {
     res.send(JSON.stringify({ "Hello": "World" }))
 });
 
 app.post('/cancel_subscription', async (req, res) => {
+    console.log("SUB CANCELLED");
+
     const payload = req.body.data.object
-    const product = payload.items.data[0].price.produc
     const customerId = payload.customer
+    const productPriceId = payload.plan.id
+    const priceObj = handlePrice(productPriceId)
+    const customer = await stripe.customers.retrieve(customerId);
+    const email = customer.email
+    const name = customer.name
 
-    if (product) {
-        const prodInfo = handleProd(product)
-        const customer = await stripe.customers.retrieve(customerId);
-        const email = customer.email
+    let date = new Date()
+    date = date.setUTCHours(0, 0, 0, 0)
 
-        let date = new Date()
-        date = date.setUTCHours(0, 0, 0, 0)
+    const userId = await getUserVID(email)
 
+    if (userId) {
         try {
-            const userId = await getUserVID(email)
+            const deals = await getContactDeals(userId)
 
-            if (prodInfo.prod === "Authorify") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "authorify_dpp_cancel_date", value: date }] }, { "Content-Type": "application/json" })
-            } else if (prodInfo.prod === "RMA") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_cancel_date", value: date }] }, { "Content-Type": "application/json" })
-            } else if (prodInfo.prod === "DFY") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_canceled_date", value: date }] }, { "Content-Type": "application/json" })
+            const dealsWithData = await Promise.all(deals.map(async (deal) => {
+                return await getDealData(deal)
+            }))
+
+            const match = dealsWithData.find((ele) => {
+                return ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.name}`
+            })
+
+            console.log("MATCH", match);
+
+            if (match) {
+                cancelDeal(match.id, date)
+            } else {
+                console.log("NO ASSOCIATED DEAL FOUND");
             }
 
         } catch (e) {
-            console.log("ERROR", e);
+            console.log("ERROR: COULD NOT UPDATE DEAL");
         }
     }
     res.status(200).send()
 })
 
 app.post('/subscription_updated', async (req, res) => {
-    const payload = req.body
-    console.log("PAYLOAD", payload)
+    console.log("SUB UPDATED");
+    const payload = req.body.data.object
+    const customerId = payload.customer
+    const productPriceId = payload.items.data[0].price.id
+    const status = req.body.status
+
+    const priceObj = handlePrice(productPriceId)
+
+    const customer = await stripe.customers.retrieve(customerId);
+    const email = customer.email
+    const name = customer.name
+
+    const userId = await getUserVID(email)
+
+    if (userId) {
+        try {
+            const deals = await getContactDeals(userId)
+
+            const dealsWithData = await Promise.all(deals.map(async (deal) => {
+                return await getDealData(deal)
+            }))
+
+            const match = dealsWithData.find((ele) => {
+                return ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.product}`
+            })
+
+            console.log("MATCH", match);
+
+            if (match) {
+                if (status === "trialing") {
+                    updateDeal(match.id, "status", "Trialing")
+                } else if (status === "active") {
+                    updateDeal(match.id, "status", "Active")
+                } else if (status === "canceled") {
+                    updateDeal(match.id, "status", "Cancelled")
+                } else if (status === "past_due" || status === "unpaid" || status === "incomplete") {
+                    updateDeal(match.id, "status", "Failed")
+                }
+            }
+
+        } catch (e) {
+            console.log("ERROR: COULD NOT UPDATE DEAL");
+        }
+    }
     res.status(200).send()
 
 })
+
 app.post('/create_subscription', async (req, res) => {
     const payload = req.body
-    const product = payload.items.data[0].price.product
-    const customerId = payload.customer
-    const productPrice = payload.items.data[0].price.id
+    console.log("SUB CREATED");
+    const product = payload.data.object.items.data[0].price.product
+    const customerId = payload.data.object.customer
+    const productPriceId = payload.data.object.items.data[0].price.id
+    const priceObj = handlePrice(productPriceId)
 
     if (product) {
-        const prodInfo = handleProd(product, productPrice)
+        const prodInfo = handleProd(product)
         const customer = await stripe.customers.retrieve(customerId);
         const email = customer.email
         const name = customer.name
-
-        let date = new Date()
-        date = date.setUTCHours(0, 0, 0, 0)
 
         try {
             let userId = await getUserVID(email)
@@ -75,34 +130,182 @@ app.post('/create_subscription', async (req, res) => {
             }
             // get all deals associated with a contact
             const deals = await getContactDeals(userId)
+            console.log("DEALS", deals);
+            if (deals && deals.length > 0) {
+                const dealsWithData = await Promise.all(deals.map(async (deal) => {
+                    return await getDealData(deal)
+                }))
+                console.log("DEALS WITH DATA", dealsWithData);
 
-            // TEST THIS OUT !!! SHOULD BE AN ARRAY OF DEAL OBJECTS
-            const dealsWithData = await Promise.all(deals.map(async (deal) => {
-                const data = await getDealData(deal)
-            }))
+                // MAKE SURE USER DOESN'T ALREADY HAVE A PRODUCT FOR THE SPECIFIC LEVEL
+                if (prodInfo.prod === "Authorify") {
+                    const match = dealsWithData.find((ele) => {
+                        return ele.properties && ele.properties.authroify_product && ele.properties.authroify_product !== null
+                    })
+                    if (match) {
+                        return
+                    } else {
+                        const dealId = await createDeal(priceObj, name)
+                        console.log("DEAL ID", dealId);
+                        // associate user to deal
+                        associateContactToDeal(dealId, userId)
+                        // get all hubspot products
+                        const hubspotProducts = await getHubspotProducts()
+                        // find the product to associate with the deal
+                        const productMatch = hubspotProducts.find((item) => {
+                            return item.properties && item.properties.name && item.properties.name.value === priceObj.name
+                        })
 
+                        if (productMatch) {
+                            console.log('PRODUCT MATCH', productMatch);
+                            // get line items
+                            const lineItems = await getLineItems()
 
-            if (prodInfo.prod === "Authorify") {
-                const match = dealsWithData.find((ele) => {
-                    ele.properties && ele.properties.authroify_product && ele.properties.authroify_product !== null
+                            // see if line item already exists to associate product to deal
+                            let lineItemMatch = lineItems.find((ele) => {
+                                return ele.properties && ele.properties.name && ele.properties.name.value === priceObj.name
+                            })
+                            if (!lineItemMatch) {
+                                // if it doesn't exist, create a line item for the product
+                                const lineItemId = await createLineItem(priceObj.name, productMatch.objectId)
+
+                                // associate the line item with the deal
+                                await createAssociation(dealId, lineItemId)
+                            } else if (lineItemMatch) {
+                                // if it does exit, associate the line item with the deal
+                                await createAssociation(dealId, lineItemMatch.objectId)
+                            }
+                        } else {
+                            const productId = await createProduct(priceObj)
+
+                            const lineItemId = await createLineItem(priceObj.name, productId)
+
+                            await createAssociation(dealId, lineItemId)
+                        }
+                    }
+                } else if (prodInfo.prod === "RMA") {
+                    const match = dealsWithData.find((ele) => {
+                        return ele.properties && ele.properties.referral_marketing_product && ele.properties.referral_marketing_product !== null
+                    })
+                    if (match) return
+                    const dealId = await createDeal(priceObj, name)
+                    console.log("DEAL ID", dealId);
+                    // associate user to deal
+                    associateContactToDeal(dealId, userId)
+                    // get all hubspot products
+                    const hubspotProducts = await getHubspotProducts()
+                    // find the product to associate with the deal
+                    const productMatch = hubspotProducts.find((item) => {
+                        return item.properties && item.properties.name && item.properties.name.value === priceObj.name
+                    })
+
+                    if (productMatch) {
+                        console.log('PRODUCT MATCH', productMatch);
+                        // get line items
+                        const lineItems = await getLineItems()
+
+                        // see if line item already exists to associate product to deal
+                        let lineItemMatch = lineItems.find((ele) => {
+                            return ele.properties && ele.properties.name && ele.properties.name.value === priceObj.name
+                        })
+                        if (!lineItemMatch) {
+                            // if it doesn't exist, create a line item for the product
+                            const lineItemId = await createLineItem(priceObj.name, productMatch.objectId)
+
+                            // associate the line item with the deal
+                            await createAssociation(dealId, lineItemId)
+                        } else if (lineItemMatch) {
+                            // if it does exit, associate the line item with the deal
+                            await createAssociation(dealId, lineItemMatch.objectId)
+                        }
+                    } else {
+                        const productId = await createProduct(priceObj)
+
+                        const lineItemId = await createLineItem(priceObj.name, productId)
+
+                        await createAssociation(dealId, lineItemId)
+                    }
+                } else if (prodInfo.prod === "DFY") {
+                    const match = dealsWithData.find((ele) => {
+                        return ele.properties && ele.properties.dfy_product_name && ele.properties.dfy_product_name !== null
+                    })
+                    if (match) return
+                    const dealId = await createDeal(priceObj, name)
+                    console.log("DEAL ID", dealId);
+                    // associate user to deal
+                    associateContactToDeal(dealId, userId)
+                    // get all hubspot products
+                    const hubspotProducts = await getHubspotProducts()
+                    // find the product to associate with the deal
+                    const productMatch = hubspotProducts.find((item) => {
+                        return item.properties && item.properties.name && item.properties.name.value === priceObj.name
+                    })
+
+                    if (productMatch) {
+                        console.log('PRODUCT MATCH', productMatch);
+                        // get line items
+                        const lineItems = await getLineItems()
+
+                        // see if line item already exists to associate product to deal
+                        let lineItemMatch = lineItems.find((ele) => {
+                            return ele.properties && ele.properties.name && ele.properties.name.value === priceObj.name
+                        })
+                        if (!lineItemMatch) {
+                            // if it doesn't exist, create a line item for the product
+                            const lineItemId = await createLineItem(priceObj.name, productMatch.objectId)
+
+                            // associate the line item with the deal
+                            await createAssociation(dealId, lineItemId)
+                        } else if (lineItemMatch) {
+                            // if it does exit, associate the line item with the deal
+                            await createAssociation(dealId, lineItemMatch.objectId)
+                        }
+                    } else {
+                        const productId = await createProduct(priceObj)
+
+                        const lineItemId = await createLineItem(priceObj.name, productId)
+
+                        await createAssociation(dealId, lineItemId)
+                    }
+                }
+            } else {
+                const dealId = await createDeal(priceObj, name)
+                console.log("DEAL ID", dealId);
+                // associate user to deal
+                associateContactToDeal(dealId, userId)
+                // get all hubspot products
+                const hubspotProducts = await getHubspotProducts()
+                // find the product to associate with the deal
+                const productMatch = hubspotProducts.find((item) => {
+                    return item.properties && item.properties.name && item.properties.name.value === priceObj.name
                 })
-                if (match) return
-                // handlePrice
 
-            } else if (prodInfo.prod === "RMA") {
-                const match = dealsWithData.find((ele) => {
-                    ele.properties && ele.properties.referral_marketing_product && ele.properties.referral_marketing_product !== null
-                })
-                if (match) return
-                // handlePrice
+                if (productMatch) {
+                    console.log('PRODUCT MATCH', productMatch);
+                    // get line items
+                    const lineItems = await getLineItems()
 
-            } else if (prodInfo.prod === "DFY") {
-                const match = dealsWithData.find((ele) => {
-                    ele.properties && ele.properties.dfy_product_name && ele.properties.dfy_product_name !== null
-                })
-                if (match) return
-                // handlePrice
+                    // see if line item already exists to associate product to deal
+                    let lineItemMatch = lineItems.find((ele) => {
+                        return ele.properties && ele.properties.name && ele.properties.name.value === priceObj.name
+                    })
+                    if (!lineItemMatch) {
+                        // if it doesn't exist, create a line item for the product
+                        const lineItemId = await createLineItem(priceObj.name, productMatch.objectId)
 
+                        // associate the line item with the deal
+                        await createAssociation(dealId, lineItemId)
+                    } else if (lineItemMatch) {
+                        // if it does exit, associate the line item with the deal
+                        await createAssociation(dealId, lineItemMatch.objectId)
+                    }
+                } else {
+                    const productId = await createProduct(priceObj)
+
+                    const lineItemId = await createLineItem(priceObj.name, productId)
+
+                    await createAssociation(dealId, lineItemId)
+                }
             }
 
         } catch (e) {
@@ -114,56 +317,50 @@ app.post('/create_subscription', async (req, res) => {
 })
 
 app.post('/successful_payment', async (req, res) => {
+    console.log("SUCCESSFUL PAYMENT");
     const payload = req.body.data.object
     const customerId = payload.customer
-    let customer;
+    const invoice = payload.invoice
 
-    try {
-        customer = await stripe.customers.retrieve(customerId);
-    } catch (e) {
-        console.error("ERROR: Could not retrieve customer by Id");
-    }
+    const customer = await stripe.customers.retrieve(customerId);
 
     const email = customer.email
-    const invoice = payload.invoice
+    const name = customer.name
+
+    const invoiceData = await stripe.invoices.retrieve(invoice);
+
+    const product = invoiceData.lines.data[0].price.product
+    const prodInfo = handleProd(product)
+
+    const productPriceId = invoiceData.lines.data[0].price.id
+    const priceObj = handlePrice(productPriceId)
+
+    const userId = await getUserVID(email)
 
     let date = new Date()
     date = date.setUTCHours(0, 0, 0, 0)
 
-    if (invoice) {
-        let invoiceData;
-
+    if (userId) {
         try {
-            invoiceData = await stripe.invoices.retrieve(invoice);
-        } catch (e) {
-            console.log("ERROR: Could not retrieve invoice data.");
-            res.status(200).send()
-            return;
-        }
+            const deals = await getContactDeals(userId)
 
-        const product = invoiceData.lines.data[0].plan.product
-        const prodInfo = handleProd(product)
+            // TEST THIS OUT !!! SHOULD BE AN ARRAY OF DEAL OBJECTS
+            const dealsWithData = await Promise.all(deals.map(async (deal) => {
+                return await getDealData(deal)
+            }))
 
-        let userRes;
-        try {
-            userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
-        } catch (e) {
-            console.error("ERROR: Could not find Hubspot User");
-        }
+            const match = dealsWithData.find((ele) => {
+                ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.product}`
+            })
 
-        const userData = userRes.data
-        const userId = userData.vid
+            console.log("MATCH", match);
 
-        try {
-            if (prodInfo.prod === "Authorify") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dppp_trial_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
-            } else if (prodInfo.prod === "RMA") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
-            } else if (prodInfo.prod === "DFY") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_last_payment_date", value: date }] }, { "Content-Type": "application/json" })
+            if (match) {
+                updateDeal(match.id, "last_payment_date", date)
             }
+
         } catch (e) {
-            console.log("ERROR: Could not update User Contact");
+            console.log("ERROR: COULD NOT UPDATE DEAL");
         }
     }
 
@@ -173,75 +370,65 @@ app.post('/successful_payment', async (req, res) => {
 app.post('/failed_payment', async (req, res) => {
     const payload = req.body.data.object
     const customerId = payload.customer
-    let customer;
 
-    try {
-        customer = await stripe.customers.retrieve(customerId);
-
-    } catch (e) {
-        console.error("ERROR: Could not retrieve customer by Id");
-    }
+    const customer = await stripe.customers.retrieve(customerId);
 
     const email = customer.email
+    const name = customer.name
     const invoice = payload.invoice
+
+    const invoiceData = await stripe.invoices.retrieve(invoice);
+
+    const productPriceId = invoiceData.lines.data[0].price.id
+    const priceObj = handlePrice(productPriceId)
+
+    const userId = await getUserVID(email)
 
     let date = new Date()
     date = date.setUTCHours(0, 0, 0, 0)
 
-    if (invoice) {
-        let invoiceData;
-
+    if (userId) {
         try {
-            invoiceData = await stripe.invoices.retrieve(invoice);
-        } catch (e) {
-            console.log("ERROR: Could not retrieve invoice data.");
-            res.status(200).send()
-            return;
-        }
+            const deals = await getContactDeals(userId)
 
-        const product = invoiceData.lines.data[0].plan.product
-        const prodInfo = handleProd(product)
+            const dealsWithData = await Promise.all(deals.map(async (deal) => {
+                return await getDealData(deal)
+            }))
 
-        let userRes;
-        try {
-            userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
+            const match = dealsWithData.find((ele) => {
+                return ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.product}`
+            })
 
-        } catch (e) {
-            console.error("ERROR: Could not find Hubspot User");
-        }
+            console.log("MATCH", match);
 
-        const userData = userRes.data
-        const userId = userData.vid
-        try {
-            if (prodInfo.prod === "Authorify") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dppptrial_hold_date", value: date }] }, { "Content-Type": "application/json" })
-            } else if (prodInfo.prod === "RMA") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "rm_hold_date", value: date }] }, { "Content-Type": "application/json" })
-            } else if (prodInfo.prod === "DFY") {
-                await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "dfy_hold_date", value: date }] }, { "Content-Type": "application/json" })
+            if (match) {
+                updateDeal(match.id, "hold_payment_date", date)
             }
+
         } catch (e) {
-            console.log("ERROR: Could not update User Contact");
+            console.log("ERROR: COULD NOT UPDATE DEAL");
         }
     }
-
     res.status(200).send()
 })
 
 app.post('/expiring_card', async (req, res) => {
     const email = req.body.data.object.owner.email
 
-    try {
-        const userRes = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${email}/profile?hapikey=${process.env.HAPI_KEY}`)
-        const userData = userRes.data
-        const userId = userData.vid
+    const userId = await getUserVID(email)
 
+    if (userId) {
+        try {
+            const deals = await getContactDeals(userId)
 
-        await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userId}/profile?hapikey=${process.env.HAPI_KEY}`, { properties: [{ property: "expired_credit_card", value: "Yes" }] }, { "Content-Type": "application/json" })
-    } catch (e) {
-        console.log("ERROR", e);
+            deals.forEach(deal => {
+                updateDeal(deal, "status", "Expired")
+            })
+
+        } catch (e) {
+            console.log("ERROR: COULD NOT UPDATE DEAL");
+        }
     }
-
     res.status(200).send()
 })
 
