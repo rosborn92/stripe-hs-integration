@@ -15,7 +15,7 @@ const getUserVID = async (userEmail) => {
 }
 
 const createUser = async (userEmail, name) => {
-    let names = name.split(' ') || []
+    let names = name.split(' ')[0] || []
     const firstName = names.splice(0, 1) || ""
     const lastName = names.join(' ') || ""
     try {
@@ -199,5 +199,6 @@ const cancelDeal = async (dealId, date) => {
 // }
 
 // getDeals()
+
 
 module.exports = { getUserVID, createUser, getContactDeals, getDealData, createDeal, cancelDeal, getHubspotProducts, createProduct, getLineItems, createLineItem, createAssociation, updateDeal, associateContactToDeal }
