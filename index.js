@@ -318,8 +318,8 @@ app.post('/create_subscription', async (req, res) => {
 
 app.post('/successful_payment', async (req, res) => {
     console.log("SUCCESSFUL PAYMENT");
-    console.log("PAYLOAD", payload);
     const payload = req.body.data.object
+    console.log("PAYLOAD", payload);
     const customerId = payload.customer
     const invoice = payload.invoice
 
