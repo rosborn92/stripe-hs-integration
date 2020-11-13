@@ -120,7 +120,8 @@ app.post('/create_subscription', async (req, res) => {
         const prodInfo = handleProd(product)
         const customer = await stripe.customers.retrieve(customerId);
         const email = customer.email
-        const name = customer.name
+        let name = customer.name
+        console.log("CUSTOMER INFO", customer);
 
         try {
             let userId = await getUserVID(email)
