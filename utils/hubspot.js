@@ -66,7 +66,23 @@ const associateContactToDeal = async (dealId, contactId) => {
     }
 }
 
-const createDeal = async (priceObj, name) => {
+const handleStatus = (status) => {
+    if (status === "trialing") {
+        return "Trialing"
+    } else if (status === "active") {
+        return "Active"
+    } else if (status === "canceled") {
+        return "Cancelled"
+    } else if (status === "past_due" || status === "unpaid" || status === "incomplete") {
+        return "Failed"
+    } else {
+        return "Active"
+    }
+}
+
+const createDeal = async (priceObj, name, status) => {
+    const newStatus = handleStatus(status)
+
     try {
         const reqBody = {
             properties: {
@@ -75,6 +91,7 @@ const createDeal = async (priceObj, name) => {
                 dealname: `${name} - ${priceObj.name}`,
                 pipeline: '6808662',
                 dealstage: '6808663',
+                status: newStatus
             }
         }
         const deal = await axios.post(`https://api.hubapi.com/crm/v3/objects/deals?hapikey=${process.env.HAPI_KEY}`, reqBody, { accept: 'application/json', 'content-type': 'application/json' })

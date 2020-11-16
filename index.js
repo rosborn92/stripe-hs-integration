@@ -115,6 +115,7 @@ app.post('/create_subscription', async (req, res) => {
     const customerId = payload.data.object.customer
     const productPriceId = payload.data.object.items.data[0].price.id
     const priceObj = handlePrice(productPriceId)
+    const status = payload.data.object.status || "Active"
 
     if (product) {
         const prodInfo = handleProd(product)
@@ -146,7 +147,7 @@ app.post('/create_subscription', async (req, res) => {
                     if (match) {
                         return
                     } else {
-                        const dealId = await createDeal(priceObj, name)
+                        const dealId = await createDeal(priceObj, name, status)
                         console.log("DEAL ID", dealId);
                         // associate user to deal
                         associateContactToDeal(dealId, userId)
@@ -189,7 +190,7 @@ app.post('/create_subscription', async (req, res) => {
                         return ele.properties && ele.properties.referral_marketing_product && ele.properties.referral_marketing_product !== null
                     })
                     if (match) return
-                    const dealId = await createDeal(priceObj, name)
+                    const dealId = await createDeal(priceObj, name, status)
                     console.log("DEAL ID", dealId);
                     // associate user to deal
                     associateContactToDeal(dealId, userId)
@@ -231,7 +232,7 @@ app.post('/create_subscription', async (req, res) => {
                         return ele.properties && ele.properties.dfy_product_name && ele.properties.dfy_product_name !== null
                     })
                     if (match) return
-                    const dealId = await createDeal(priceObj, name)
+                    const dealId = await createDeal(priceObj, name, status)
                     console.log("DEAL ID", dealId);
                     // associate user to deal
                     associateContactToDeal(dealId, userId)
@@ -270,7 +271,7 @@ app.post('/create_subscription', async (req, res) => {
                     }
                 }
             } else {
-                const dealId = await createDeal(priceObj, name)
+                const dealId = await createDeal(priceObj, name, status)
                 console.log("DEAL ID", dealId);
                 // associate user to deal
                 associateContactToDeal(dealId, userId)
