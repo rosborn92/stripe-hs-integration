@@ -82,7 +82,8 @@ const handleStatus = (status) => {
 
 const createDeal = async (priceObj, name, status) => {
     const newStatus = handleStatus(status)
-
+    console.log("STATUS FROM CREATE", newStatus);
+    console.log("NAME FROM CREATE", name);
     try {
         const reqBody = {
             properties: {
