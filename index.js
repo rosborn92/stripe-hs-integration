@@ -121,7 +121,8 @@ app.post('/create_subscription', async (req, res) => {
     const prodInfo = handleProd(product)
     const customer = await stripe.customers.retrieve(customerId);
     const email = customer.email
-    let name = customer.name
+    let name = customer.metadata.name || customer.name || customer.shipping.name
+
     
     console.log("CUSTOMER INFO", customer);
 

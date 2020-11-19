@@ -139,7 +139,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "authorify_product",
                 product: "digitalannual",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "997.00",
                 name: "Authorify Digital Membership Annual $997"
             }
@@ -147,7 +148,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "authorify_product",
                 product: "digitalplatinumplusannual",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "2997.00",
                 name: "Authorify Platinum+Plus Membership Annual $2997"
             }
@@ -155,7 +157,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "authorify_product",
                 product: "digitalplatinumannual",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "2997.00",
                 name: "Authorify Platinum Membership Annual $2997"
             }
@@ -163,7 +166,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "authorify_product",
                 product: "digitalpremiumannual",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "1997.00",
                 name: "Authorify Premium Membership Annual $1997"
             }
@@ -171,7 +175,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "authorify_product",
                 product: "digitalpremiumplusannual",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "1997.00",
                 name: "Authorify Premium+Plus Membership Annual $1997"
             }
@@ -179,7 +184,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "authorify_product",
                 product: "digitalplusannual",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "997.00",
                 name: "Authorify Digital+Plus Membership Annual $997"
             }
@@ -438,7 +444,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 300",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "5970.00",
                 name: "Referral Marketing - Annual Magazines 300"
             }
@@ -446,7 +453,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 250",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "5490.00",
                 name: "Referral Marketing - Annual Magazines 250"
             }
@@ -454,7 +462,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 200",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "4490.00",
                 name: "Referral Marketing - Annual Magazines 200"
             }
@@ -462,7 +471,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 150",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "3490.00",
                 name: "Referral Marketing - Annual Magazines 150"
             }
@@ -470,7 +480,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 50",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "1490.00",
                 name: "Referral Marketing - Annual Magazines 50"
             }
@@ -478,7 +489,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 100",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "2490.00",
                 name: "Referral Marketing - Annual Magazines 100"
             }
@@ -486,7 +498,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 75",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "1997.00",
                 name: "Referral Marketing - Annual Magazines 75"
             }
@@ -494,7 +507,8 @@ const handlePrice = (price) => {
             return {
                 productProperty: "referral_marketing_product",
                 product: "Referral Marketing - Annual Magazines 30",
-                priceProperty: "hs_acv",
+                priceProperty: "recurring_revenue_amount",
+                // priceProperty: "hs_acv",
                 value: "997.00",
                 name: "Referral Marketing - Annual Magazines 30"
             }
