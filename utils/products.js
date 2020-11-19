@@ -138,7 +138,7 @@ const handlePrice = (price) => {
         case "afydigitalannual997": // Auth Dig Annual 997 / yr
             return {
                 productProperty: "authorify_product",
-                product: "digitalannual",
+                product: "Digital Annual",
                 priceProperty: "recurring_revenue_amount",
                 // priceProperty: "hs_acv",
                 value: "997.00",
@@ -147,7 +147,7 @@ const handlePrice = (price) => {
         case "price_1HhgZJA4Qp1GGmkoey2X5nQ0": // Auth Plat + Annual 2997 / yr
             return {
                 productProperty: "authorify_product",
-                product: "digitalplatinumplusannual",
+                product: "Digital Platinum Plus Annual",
                 priceProperty: "recurring_revenue_amount",
                 // priceProperty: "hs_acv",
                 value: "2997.00",
@@ -156,7 +156,7 @@ const handlePrice = (price) => {
         case "price_1HhgZJA4Qp1GGmkoyhC09a00": // Auth Plat Annual 2997 / yr
             return {
                 productProperty: "authorify_product",
-                product: "digitalplatinumannual",
+                product: "Digital Platinum Annual",
                 priceProperty: "recurring_revenue_amount",
                 // priceProperty: "hs_acv",
                 value: "2997.00",
@@ -165,7 +165,7 @@ const handlePrice = (price) => {
         case "price_1HhgZJA4Qp1GGmkozgl2QPZB": // Auth Prem  Annual 1997 / yr
             return {
                 productProperty: "authorify_product",
-                product: "digitalpremiumannual",
+                product: "Digital Premium Annual",
                 priceProperty: "recurring_revenue_amount",
                 // priceProperty: "hs_acv",
                 value: "1997.00",
@@ -174,7 +174,7 @@ const handlePrice = (price) => {
         case "price_1HhgZJA4Qp1GGmkobXElDxt4": // Auth Prem + Annual 1997 / yr
             return {
                 productProperty: "authorify_product",
-                product: "digitalpremiumplusannual",
+                product: "Digital Premium Plus Annual",
                 priceProperty: "recurring_revenue_amount",
                 // priceProperty: "hs_acv",
                 value: "1997.00",
@@ -183,7 +183,7 @@ const handlePrice = (price) => {
         case "price_1HhgZKA4Qp1GGmkojD1SQL1R": // Auth Dig + Annual 997 / yr
             return {
                 productProperty: "authorify_product",
-                product: "digitalplusannual",
+                product: "Digital Plus Annual",
                 priceProperty: "recurring_revenue_amount",
                 // priceProperty: "hs_acv",
                 value: "997.00",
