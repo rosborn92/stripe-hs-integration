@@ -24,7 +24,6 @@ const createUser = async (userEmail, name) => {
             "properties": [{
                 "property": "email",
                 "value": userEmail,
-                "hs_analytics_source_data_2": "WEBSTACKS SLACK APP"
             }, {
                 "property": "firstname",
                 "value": firstName
@@ -39,6 +38,52 @@ const createUser = async (userEmail, name) => {
         console.error("Could not create user VID", e)
     }
 }
+
+const createUserOptIn = async (email, firstName, lastName, opt_in) => {
+
+    try {
+
+        const reqBody = {
+            "properties": [{
+                "property": "email",
+                "value": email,
+            }, {
+                "property": "firstname",
+                "value": firstName
+            }, {
+                "property": "lastname",
+                "value": lastName
+            }, {
+                "property": "text_message_opt_in",
+                "value": opt_in
+            }]
+        }
+        const res = await axios.post(`https://api.hubapi.com/contacts/v1/contact/?hapikey=${process.env.HAPI_KEY}`, reqBody, { 'Content-Type': 'application/json' })
+        console.log("HERE", res.data.vid);
+        return res.data.vid
+    } catch (e) {
+        console.error("Could not create user VID", e)
+    }
+}
+// createUserOptIn('wobblytest@mail.com', 'rob', 'osborn', true)
+
+// createUserOptIn("testingHook@mail.com", "rob", "webhooks", true)
+
+const updateContact = async (userVID, opt_in) => {
+
+    try {
+        const reqBody = {
+            "properties": [{
+                "property": "text_message_opt_in",
+                "value": opt_in
+            }]
+        }
+        const res = await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userVID}/profile?hapikey=${process.env.HAPI_KEY}`, reqBody, { 'Content-Type': 'application/json' })
+    } catch (e) {
+        console.log("COULD NOT UPDATE CONTACT", e);
+    }
+}
+// updateContact(112385601, false)
 
 const getContactDeals = async (userId) => {
     const dealsData = await axios.get(`https://api.hubapi.com/crm-associations/v1/associations/${userId}/HUBSPOT_DEFINED/4?hapikey=${process.env.HAPI_KEY}`)
@@ -218,4 +263,4 @@ const cancelDeal = async (dealId, date) => {
 
 // getDeals()
 
-module.exports = { getUserVID, createUser, getContactDeals, getDealData, createDeal, cancelDeal, getHubspotProducts, createProduct, getLineItems, createLineItem, createAssociation, updateDeal, associateContactToDeal }
+module.exports = { getUserVID, createUser, getContactDeals, getDealData, createDeal, cancelDeal, getHubspotProducts, createProduct, getLineItems, createLineItem, createAssociation, updateDeal, associateContactToDeal, createUserOptIn, updateContact }

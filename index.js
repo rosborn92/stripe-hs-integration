@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 require('dotenv').config()
 const { handleProd, handlePrice } = require('./utils/products')
-const { getUserVID, createUser, getContactDeals, getDealData, createDeal, getHubspotProducts, createProduct, getLineItems, createLineItem, createAssociation, updateDeal, associateContactToDeal, cancelDeal } = require('./utils/hubspot')
+const { getUserVID, createUser, getContactDeals, getDealData, createDeal, getHubspotProducts, createProduct, getLineItems, createLineItem, createAssociation, updateDeal, associateContactToDeal, cancelDeal, createUserOptIn, updateContact } = require('./utils/hubspot')
 const app = express()
 app.use(bodyParser.json())
 
@@ -123,7 +123,7 @@ app.post('/create_subscription', async (req, res) => {
     const email = customer.email
     let name = customer.metadata.name || customer.name || customer.shipping.name
 
-    
+
     console.log("CUSTOMER INFO", customer);
 
     try {
@@ -429,6 +429,53 @@ app.post('/expiring_card', async (req, res) => {
 
         } catch (e) {
             console.log("ERROR: COULD NOT UPDATE DEAL");
+        }
+    }
+    res.status(200).send()
+})
+
+app.post('/funnel_webhooks', async (req, res) => {
+    const purchase = req.body.purchase
+    const firstName = purchase.contact.first_name
+    const lastName = purchase.contact.last_name
+    const email = purchase.contact.email
+    const member_opt_in = purchase.contact.member_opt_in
+
+    if (member_opt_in === "true") {
+        try {
+            let userId = await getUserVID(email)
+
+            if (!userId) {
+                userId = await createUserOptIn(email, firstName, lastName, true)
+            } else {
+                // update contacts's opt in if they selected it
+                updateContact(userId, true)
+            }
+        } catch (e) {
+            console.log("ERROR", e);
+        }
+    }
+    res.status(200).send()
+})
+app.post('/funnel_webhooks/test', async (req, res) => {
+    const purchase = req.body.purchase
+    const firstName = purchase.contact.first_name
+    const lastName = purchase.contact.last_name
+    const email = purchase.contact.email
+    const member_opt_in = purchase.contact.member_opt_in
+
+    if (member_opt_in === "true") {
+        try {
+            let userId = await getUserVID(email)
+
+            if (!userId) {
+                userId = await createUserOptIn(email, firstName, lastName, true)
+            } else {
+                // update contacts's opt in if they selected it
+                updateContact(userId, true)
+            }
+        } catch (e) {
+            console.log("ERROR", e);
         }
     }
     res.status(200).send()
