@@ -434,29 +434,29 @@ app.post('/expiring_card', async (req, res) => {
     res.status(200).send()
 })
 
-app.post('/click_funnels/funnel_webhooks/test', async (req, res) => {
-    // const purchase = req.body.purchase
-    // const firstName = purchase.contact.first_name
-    // const lastName = purchase.contact.last_name
-    // const email = purchase.contact.email
-    // const member_opt_in = purchase.contact.member_opt_in
+// app.post('/click_funnels/funnel_webhooks/test', async (req, res) => {
+//     // const purchase = req.body.purchase
+//     // const firstName = purchase.contact.first_name
+//     // const lastName = purchase.contact.last_name
+//     // const email = purchase.contact.email
+//     // const member_opt_in = purchase.contact.member_opt_in
 
-    // if (member_opt_in && member_opt_in === "true") {
-    //     try {
-    //         let userId = await getUserVID(email)
+//     // if (member_opt_in && member_opt_in === "true") {
+//     //     try {
+//     //         let userId = await getUserVID(email)
 
-    //         if (!userId) {
-    //             userId = await createUserOptIn(email, firstName, lastName, true)
-    //         } else {
-    //             // update contacts's opt in if they selected it
-    //             updateContact(userId, true)
-    //         }
-    //     } catch (e) {
-    //         console.log("ERROR", e);
-    //     }
-    // }
-    res.status(200).send()
-})
+//     //         if (!userId) {
+//     //             userId = await createUserOptIn(email, firstName, lastName, true)
+//     //         } else {
+//     //             // update contacts's opt in if they selected it
+//     //             updateContact(userId, true)
+//     //         }
+//     //     } catch (e) {
+//     //         console.log("ERROR", e);
+//     //     }
+//     // }
+//     res.status(200).send()
+// })
 app.post('/click_funnels', async (req, res) => {
     const purchase = req.body.purchase
     const firstName = purchase.contact.first_name
@@ -480,29 +480,30 @@ app.post('/click_funnels', async (req, res) => {
     }
     res.status(200).send()
 })
-// app.post('/funnel_webhooks/test', async (req, res) => {
-//     const purchase = req.body.purchase
-//     const firstName = purchase.contact.first_name
-//     const lastName = purchase.contact.last_name
-//     const email = purchase.contact.email
-//     const member_opt_in = purchase.contact.member_opt_in
 
-// if (member_opt_in === "true") {
-//     try {
-//         let userId = await getUserVID(email)
+app.post('/funnel_webhooks/test', async (req, res) => {
+    //     const purchase = req.body.purchase
+    //     const firstName = purchase.contact.first_name
+    //     const lastName = purchase.contact.last_name
+    //     const email = purchase.contact.email
+    //     const member_opt_in = purchase.contact.member_opt_in
 
-//         if (!userId) {
-//             userId = await createUserOptIn(email, firstName, lastName, true)
-//         } else {
-//             // update contacts's opt in if they selected it
-//             updateContact(userId, true)
-//         }
-//     } catch (e) {
-//         console.log("ERROR", e);
-//     }
-// }
-//     res.status(200).send()
-// })
+    // if (member_opt_in === "true") {
+    //     try {
+    //         let userId = await getUserVID(email)
+
+    //         if (!userId) {
+    //             userId = await createUserOptIn(email, firstName, lastName, true)
+    //         } else {
+    //             // update contacts's opt in if they selected it
+    //             updateContact(userId, true)
+    //         }
+    //     } catch (e) {
+    //         console.log("ERROR", e);
+    //     }
+    // }
+    res.status(200).send()
+})
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
