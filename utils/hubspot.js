@@ -59,7 +59,7 @@ const createUserOptIn = async (email, firstName, lastName, opt_in) => {
             }]
         }
         const res = await axios.post(`https://api.hubapi.com/contacts/v1/contact/?hapikey=${process.env.HAPI_KEY}`, reqBody, { 'Content-Type': 'application/json' })
-        console.log("HERE", res.data.vid);
+        // console.log("HERE", res.data.vid);
         return res.data.vid
     } catch (e) {
         console.error("Could not create user VID", e)
@@ -69,16 +69,16 @@ const createUserOptIn = async (email, firstName, lastName, opt_in) => {
 
 // createUserOptIn("testingHook@mail.com", "rob", "webhooks", true)
 
-const updateContact = async (userVID, opt_in) => {
+const updateContact = async (userVID) => {
 
     try {
         const reqBody = {
             "properties": [{
                 "property": "text_message_opt_in",
-                "value": opt_in
+                "value": true
             }]
         }
-        const res = await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userVID}/profile?hapikey=${process.env.HAPI_KEY}`, reqBody, { 'Content-Type': 'application/json' })
+        await axios.post(`https://api.hubapi.com/contacts/v1/contact/vid/${userVID}/profile?hapikey=${process.env.HAPI_KEY}`, reqBody, { 'Content-Type': 'application/json' })
     } catch (e) {
         console.log("COULD NOT UPDATE CONTACT", e);
     }

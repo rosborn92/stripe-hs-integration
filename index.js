@@ -450,7 +450,7 @@ app.post('/click_funnels/funnel_webhooks/test', async (req, res) => {
                 userId = await createUserOptIn(email, firstName, lastName, true)
             } else {
                 // update contacts's opt in if they selected it
-                updateContact(userId, true)
+                updateContact(userId)
             }
         } catch (e) {
             console.log("ERROR", e);
@@ -474,7 +474,7 @@ app.post('/click_funnels', async (req, res) => {
                 userId = await createUserOptIn(email, firstName, lastName, true)
             } else {
                 // update contacts's opt in if they selected it
-                updateContact(userId, true)
+                updateContact(userId)
             }
         } catch (e) {
             console.log("ERROR", e);
@@ -499,7 +499,7 @@ app.post('/funnel_webhooks/test', async (req, res) => {
                 userId = await createUserOptIn(email, firstName, lastName, true)
             } else {
                 // update contacts's opt in if they selected it
-                updateContact(userId, true)
+                updateContact(userId)
             }
         } catch (e) {
             console.log("ERROR", e);
