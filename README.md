@@ -6,6 +6,8 @@ Webhooks triggered from Stripe events are handled by an Express app and result i
 
 Six triggers: subscriptions created, subscription cancellations, updated subscriptions, successful payments, failed payments, and credit card expirations result in updated properties for Hubspot contacts identified by a Stripe user's email that is extracted from webhook payloads when events triggered by Stripe actions interact with this web app.
 
+Another endpoint listens for a webhook coming from clickfunnels. The data includes form data from purchases created in clickfunnels. Of importance is the member opt in property, which is a checkbox subscribing to test messages. If they opt in, their email is used to update the specific property on the existing user. If they don't exist, the webhook handles making a user with the member opt in property set to true. Becuase subscriptions are also dependent on an existing hubspot user or creating one if the individual doesn't already have a contact and 
+
 ## Getting Started
 
 ### Dependencies

@@ -1,12 +1,10 @@
 const axios = require('axios');
-const { handlePrice, handleProd } = require('./products');
 require('dotenv').config()
 
 const getUserVID = async (userEmail) => {
     try {
         const res = await axios.get(`https://api.hubapi.com/contacts/v1/contact/email/${userEmail}/profile?hapikey=${process.env.HAPI_KEY}`)
         if (res.status === 200) {
-            console.log(res.data.vid);
             return res.data.vid
         } else return;
     } catch (e) {
@@ -59,15 +57,11 @@ const createUserOptIn = async (email, firstName, lastName, opt_in) => {
             }]
         }
         const res = await axios.post(`https://api.hubapi.com/contacts/v1/contact/?hapikey=${process.env.HAPI_KEY}`, reqBody, { 'Content-Type': 'application/json' })
-        // console.log("HERE", res.data.vid);
         return res.data.vid
     } catch (e) {
         console.error("Could not create user VID", e)
     }
 }
-// createUserOptIn('wobblytest@mail.com', 'rob', 'osborn', true)
-
-// createUserOptIn("testingHook@mail.com", "rob", "webhooks", true)
 
 const updateContact = async (userVID) => {
 
@@ -127,8 +121,6 @@ const handleStatus = (status) => {
 
 const createDeal = async (priceObj, name, status) => {
     const newStatus = handleStatus(status)
-    console.log("STATUS FROM CREATE", newStatus);
-    console.log("NAME FROM CREATE", name);
     try {
         const reqBody = {
             properties: {
@@ -167,14 +159,12 @@ const createProduct = async (product) => {
                 }
             }
             const newProduct = await axios.post(`https://api.hubapi.com/crm/v3/objects/products?hapikey=${process.env.HAPI_KEY}`, productBody, { accept: 'application/json', 'content-type': 'application/json' })
-            console.log("NEW PRODUCT", newProduct.data.id);
             return newProduct.data.id
         } else {
             return undefined
         }
     } catch (e) {
-        console.log("FAILED PRODUCT", product);
-        console.log("ERROR: COULD NOT CREATE PRODUCT");
+        console.log("ERROR: COULD NOT CREATE PRODUCT", product);
     }
 }
 
@@ -230,7 +220,6 @@ const updateDeal = async (dealId, property, value) => {
                 [property]: value
             }
         }
-        console.log("REQ BODY", body);
         await axios.patch(`https://api.hubapi.com/crm/v3/objects/deals/${dealId}?hapikey=${process.env.HAPI_KEY}`, body, { accept: 'application/json', 'content-type': 'application/json' })
     } catch (e) {
         console.log("ERROR:", e);
@@ -245,22 +234,10 @@ const cancelDeal = async (dealId, date) => {
                 status: "Cancelled"
             }
         }
-        console.log("REQ BODY", body);
         await axios.patch(`https://api.hubapi.com/crm/v3/objects/deals/${dealId}?hapikey=${process.env.HAPI_KEY}`, body, { accept: 'application/json', 'content-type': 'application/json' })
     } catch (e) {
         console.log("ERROR: COULD NOT UPDATE DEAL", e);
     }
 }
-
-
-// const getDeals = async () => {
-//     const tix = await axios.get(`https://api.hubapi.com/deals/v1/deal/paged?hapikey=${process.env.HAPI_KEY}&includeAssociations=false&limit=50&properties=dealname&properties=status`)
-//     // console.log(tix.data.deals)
-//     tix.data.deals.forEach(element => {
-//         console.log(element)
-//     });
-// }
-
-// getDeals()
 
 module.exports = { getUserVID, createUser, getContactDeals, getDealData, createDeal, cancelDeal, getHubspotProducts, createProduct, getLineItems, createLineItem, createAssociation, updateDeal, associateContactToDeal, createUserOptIn, updateContact }

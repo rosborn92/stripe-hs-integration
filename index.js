@@ -10,15 +10,13 @@ app.use(bodyParser.json())
 const PORT = process.env.PORT || 3000
 
 const stripe = require('stripe')(process.env.STRIPE_PROD_SK);
-// const stripe = require('stripe')(process.env.STRIPE_TEST_SK);
+// const stripe = require('stripe')(process.env.STRIPE_TEST_SK); // FOR DEV
 
 app.get("/", (req, res) => {
     res.send(JSON.stringify({ "Hello": "World" }))
 });
 
 app.post('/cancel_subscription', async (req, res) => {
-    console.log("SUB CANCELLED");
-
     const payload = req.body.data.object
     const customerId = payload.customer
     const productPriceId = payload.plan.id
@@ -44,8 +42,6 @@ app.post('/cancel_subscription', async (req, res) => {
                 return ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.name}`
             })
 
-            console.log("MATCH", match);
-
             if (match) {
                 cancelDeal(match.id, date)
             } else {
@@ -60,7 +56,6 @@ app.post('/cancel_subscription', async (req, res) => {
 })
 
 app.post('/subscription_updated', async (req, res) => {
-    console.log("SUB UPDATED");
     const payload = req.body.data.object
     const customerId = payload.customer
     const productPriceId = payload.items.data[0].price.id
@@ -86,8 +81,6 @@ app.post('/subscription_updated', async (req, res) => {
                 return ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.product}`
             })
 
-            console.log("MATCH", match);
-
             if (match) {
                 if (status === "trialing") {
                     updateDeal(match.id, "status", "Trialing")
@@ -110,21 +103,15 @@ app.post('/subscription_updated', async (req, res) => {
 
 app.post('/create_subscription', async (req, res) => {
     const payload = req.body
-    console.log("PAYLOAD", payload.data.object);
-    console.log("SUB CREATED");
     const product = payload.data.object.items.data[0].price.product
     const customerId = payload.data.object.customer
     const productPriceId = payload.data.object.items.data[0].price.id
     const priceObj = handlePrice(productPriceId)
     const status = payload.data.object.status || "Active"
-    console.log("STATUS", status);
     const prodInfo = handleProd(product)
     const customer = await stripe.customers.retrieve(customerId);
     const email = customer.email
     let name = customer.metadata.name || customer.name || customer.shipping.name
-
-
-    console.log("CUSTOMER INFO", customer);
 
     try {
         let userId = await getUserVID(email)
@@ -134,12 +121,10 @@ app.post('/create_subscription', async (req, res) => {
         }
         // get all deals associated with a contact
         const deals = await getContactDeals(userId)
-        console.log("DEALS", deals);
         if (deals && deals.length > 0) {
             const dealsWithData = await Promise.all(deals.map(async (deal) => {
                 return await getDealData(deal)
             }))
-            console.log("DEALS WITH DATA", dealsWithData);
 
             // MAKE SURE USER DOESN'T ALREADY HAVE A PRODUCT FOR THE SPECIFIC LEVEL
             if (prodInfo.prod === "Authorify") {
@@ -150,7 +135,6 @@ app.post('/create_subscription', async (req, res) => {
                     return
                 } else {
                     const dealId = await createDeal(priceObj, name, status)
-                    console.log("DEAL ID", dealId);
                     // associate user to deal
                     associateContactToDeal(dealId, userId)
                     // get all hubspot products
@@ -161,7 +145,6 @@ app.post('/create_subscription', async (req, res) => {
                     })
 
                     if (productMatch) {
-                        console.log('PRODUCT MATCH', productMatch);
                         // get line items
                         const lineItems = await getLineItems()
 
@@ -193,7 +176,6 @@ app.post('/create_subscription', async (req, res) => {
                 })
                 if (match) return
                 const dealId = await createDeal(priceObj, name, status)
-                console.log("DEAL ID", dealId);
                 // associate user to deal
                 associateContactToDeal(dealId, userId)
                 // get all hubspot products
@@ -204,7 +186,6 @@ app.post('/create_subscription', async (req, res) => {
                 })
 
                 if (productMatch) {
-                    console.log('PRODUCT MATCH', productMatch);
                     // get line items
                     const lineItems = await getLineItems()
 
@@ -235,7 +216,6 @@ app.post('/create_subscription', async (req, res) => {
                 })
                 if (match) return
                 const dealId = await createDeal(priceObj, name, status)
-                console.log("DEAL ID", dealId);
                 // associate user to deal
                 associateContactToDeal(dealId, userId)
                 // get all hubspot products
@@ -246,7 +226,6 @@ app.post('/create_subscription', async (req, res) => {
                 })
 
                 if (productMatch) {
-                    console.log('PRODUCT MATCH', productMatch);
                     // get line items
                     const lineItems = await getLineItems()
 
@@ -274,7 +253,6 @@ app.post('/create_subscription', async (req, res) => {
             }
         } else {
             const dealId = await createDeal(priceObj, name, status)
-            console.log("DEAL ID", dealId);
             // associate user to deal
             associateContactToDeal(dealId, userId)
             // get all hubspot products
@@ -285,7 +263,6 @@ app.post('/create_subscription', async (req, res) => {
             })
 
             if (productMatch) {
-                console.log('PRODUCT MATCH', productMatch);
                 // get line items
                 const lineItems = await getLineItems()
 
@@ -322,9 +299,7 @@ app.post('/create_subscription', async (req, res) => {
 })
 
 app.post('/successful_payment', async (req, res) => {
-    console.log("SUCCESSFUL PAYMENT");
     const payload = req.body.data.object
-    console.log("PAYLOAD", payload);
     const customerId = payload.customer
     const invoice = payload.invoice
 
@@ -343,19 +318,16 @@ app.post('/successful_payment', async (req, res) => {
     let date = new Date()
     date = date.setUTCHours(0, 0, 0, 0)
 
-    if (userId) {
+    if (userId && invoiceData) {
         try {
             const deals = await getContactDeals(userId)
 
             const dealsWithData = await Promise.all(deals.map(async (deal) => {
                 return await getDealData(deal)
             }))
-            console.log("DEALS WITH DATA", dealsWithData);
             const match = dealsWithData.find((ele) => {
                 ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.product}`
             })
-
-            console.log("MATCH", match);
 
             if (match) {
                 updateDeal(match.id, "last_payment_date", date)
@@ -401,8 +373,6 @@ app.post('/failed_payment', async (req, res) => {
                 return ele.properties && ele.properties.dealname && ele.properties.dealname === `${name} - ${priceObj.product}`
             })
 
-            console.log("MATCH", match);
-
             if (match) {
                 updateDeal(match.id, "hold_payment_date", date)
             }
@@ -417,10 +387,10 @@ app.post('/failed_payment', async (req, res) => {
 app.post('/expiring_card', async (req, res) => {
     const email = req.body.data.object.owner.email
 
-    const userId = await getUserVID(email)
-
-    if (userId) {
+    if (email) {
         try {
+            const userId = await getUserVID(email)
+
             const deals = await getContactDeals(userId)
 
             deals.forEach(deal => {
@@ -435,31 +405,10 @@ app.post('/expiring_card', async (req, res) => {
 })
 
 app.post('/click_funnels/funnel_webhooks/test', async (req, res) => {
-    console.log("FROM FUNNELS / WEBHOOK TEST", req.body.purchase);
-    const purchase = req.body.purchase
-    const firstName = purchase.contact.first_name
-    const lastName = purchase.contact.last_name
-    const email = purchase.contact.email
-    const member_opt_in = purchase.contact.member_opt_in
-
-    if (member_opt_in && member_opt_in === "true") {
-        try {
-            let userId = await getUserVID(email)
-
-            if (!userId) {
-                userId = await createUserOptIn(email, firstName, lastName, true)
-            } else {
-                // update contacts's opt in if they selected it
-                updateContact(userId)
-            }
-        } catch (e) {
-            console.log("ERROR", e);
-        }
-    }
+    // for the purpose of creating webhook - test for click funnels verification
     res.status(200).send()
 })
 app.post('/click_funnels', async (req, res) => {
-    console.log("FROM FUNNELS / WEBHOOK ", req.body.purchase);
     const purchase = req.body.purchase
     const firstName = purchase.contact.first_name
     const lastName = purchase.contact.last_name
@@ -483,30 +432,6 @@ app.post('/click_funnels', async (req, res) => {
     res.status(200).send()
 })
 
-app.post('/funnel_webhooks/test', async (req, res) => {
-    console.log("FROM WEBHOOK TEST", req.body.purchase);
-        const purchase = req.body.purchase
-        const firstName = purchase.contact.first_name
-        const lastName = purchase.contact.last_name
-        const email = purchase.contact.email
-        const member_opt_in = purchase.contact.member_opt_in
-
-    if (member_opt_in === "true") {
-        try {
-            let userId = await getUserVID(email)
-
-            if (!userId) {
-                userId = await createUserOptIn(email, firstName, lastName, true)
-            } else {
-                // update contacts's opt in if they selected it
-                updateContact(userId)
-            }
-        } catch (e) {
-            console.log("ERROR", e);
-        }
-    }
-    res.status(200).send()
-})
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
